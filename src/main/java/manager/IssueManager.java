@@ -7,6 +7,7 @@ import repository.IssueRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class IssueManager {
@@ -22,27 +23,7 @@ public class IssueManager {
         return issueRepository.getAll();
     }
 
-    public List<Issue>  getOpenedIssueList() {
-        Predicate<Issue> isOpened = Issue::isStatus;
-        List<Issue> openedIssueList = new ArrayList<>();
-
-        for (Issue issue : this.filterBy(isOpened)) {
-            openedIssueList.add(issue);
-        }
-        return openedIssueList;
-    }
-
-    public List<Issue> getClosedIssueList() {
-        Predicate<Issue> isOpened = issue -> !issue.isStatus();
-        List<Issue> openedIssueList = new ArrayList<>();
-
-        for (Issue issue : this.filterBy(isOpened)) {
-            openedIssueList.add(issue);
-        }
-        return openedIssueList;
-    }
-
-    public List<Issue> filterBy(Predicate<Issue> issuePredicate) {
+    private List<Issue> filterBy(Predicate<Issue> issuePredicate) {
         List<Issue> filteredIssues = new ArrayList<>();
 
         for (Issue issue : issueRepository.getAll()) {
@@ -54,15 +35,46 @@ public class IssueManager {
         return filteredIssues;
     }
 
-    public void sortIssues(boolean newestToOldestOrder) {
+    public List<Issue>  getOpenedIssueList() {
+        Predicate<Issue> isOpened = Issue::isStatus;
+
+        List<Issue> openedIssueList = new ArrayList<>(this.filterBy(isOpened));
+        return openedIssueList;
+    }
+
+    public List<Issue> getClosedIssueList() {
+        Predicate<Issue> isOpened = issue -> !issue.isStatus();
+
+        List<Issue> closedIssueList = new ArrayList<>(this.filterBy(isOpened));
+        return closedIssueList;
+    }
+
+    public List<Issue> filterByAuthor(String author) {
+        Predicate<Issue> p = issue -> issue.getAuthor().equalsIgnoreCase(author);
+        return this.filterBy(p);
+    }
+
+    public List<Issue> filterByLabel(String label) {
+        Predicate<Issue> p = issue -> issue.getLabel().contains(label);
+        return this.filterBy(p);
+    }
+
+    public List<Issue> filterByAssignee(String assignee) {
+        Predicate<Issue> p = issue -> issue.getAssignee().equalsIgnoreCase(assignee);
+        return this.filterBy(p);
+    }
+
+    public List<Issue> sortIssues(boolean newestToOldestOrder) {
+        List<Issue> sortedIssues = new ArrayList<>(issueRepository.getAll());
 
         if (newestToOldestOrder) {
             IssueNewestToOldestComparator c = new IssueNewestToOldestComparator();
-            issueRepository.getAll().sort(c);
+            sortedIssues.sort(c);
         } else {
             IssueOldestToNewestComparator c = new IssueOldestToNewestComparator();
-            issueRepository.getAll().sort(c);
+            sortedIssues.sort(c);
         }
+        return sortedIssues;
     }
 
     public void setStatus(int issueId, boolean openIssue) {

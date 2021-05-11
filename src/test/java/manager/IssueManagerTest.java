@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +16,9 @@ class IssueManagerTest {
     @Nested
     class IssueManagerWhenOneIssueTest {
         IssueManager issueManager = new IssueManager();
-        Issue firstIssue = new Issue(1, "Иванов", "Label1", "Smith");
+        Set<String> label1 = new HashSet<>(Arrays.asList("Label11", "Label12"));
+
+        Issue firstIssue = new Issue(1, "Иванов", label1, "Smith");
 
         @BeforeEach
         public void setUp() {
@@ -45,31 +47,28 @@ class IssueManagerTest {
 
         @Test
         public void shouldFilterByAuthor() {
-            Predicate<Issue> p = issue -> issue.getAuthor().equalsIgnoreCase("Иванов");
             Issue[] expected = new Issue[] {firstIssue};
-            Issue[] actual = new Issue[issueManager.filterBy(p).size()];
+            Issue[] actual = new Issue[issueManager.filterByAuthor("Иванов").size()];
 
-            issueManager.filterBy(p).toArray(actual);
+            issueManager.filterByAuthor("Иванов").toArray(actual);
             assertArrayEquals(expected, actual);
         }
 
         @Test
         public void shouldFilterByLabel() {
-            Predicate<Issue> p = issue -> issue.getLabel().equalsIgnoreCase("Label1");
             Issue[] expected = new Issue[] {firstIssue};
-            Issue[] actual = new Issue[issueManager.filterBy(p).size()];
+            Issue[] actual = new Issue[issueManager.filterByLabel("Label12").size()];
 
-            issueManager.filterBy(p).toArray(actual);
+            issueManager.filterByLabel("Label12").toArray(actual);
             assertArrayEquals(expected, actual);
         }
 
         @Test
         public void shouldFilterByAssignee() {
-            Predicate<Issue> p = issue -> issue.getAssignee().equalsIgnoreCase("Smith");
             Issue[] expected = new Issue[] {firstIssue};
-            Issue[] actual = new Issue[issueManager.filterBy(p).size()];
+            Issue[] actual = new Issue[issueManager.filterByAssignee("Smith").size()];
 
-            issueManager.filterBy(p).toArray(actual);
+            issueManager.filterByAssignee("Smith").toArray(actual);
             assertArrayEquals(expected, actual);
         }
     }
@@ -77,12 +76,16 @@ class IssueManagerTest {
     @Nested
     class IssueManagerWhenSeveralIssuesTest {
         IssueManager issueManager = new IssueManager();
-        Issue firstIssue = new Issue(1, "Иванов", "Label1", "Smith");
-        Issue secondIssue = new Issue(2, "Иванов", "Label2", "Anderson");
-        Issue thirdIssue = new Issue(3, "Петров", "Label1", "Anderson");
+        Set<String> label1 = new HashSet<>(Arrays.asList("Label11", "Label12"));
+        Set<String> label2 = new HashSet<>(Arrays.asList("Label2"));
+        Set<String> label3 = new HashSet<>(Arrays.asList("Label11", "Label3"));
+
+        Issue firstIssue = new Issue(1, "Иванов", label1, "Smith");
+        Issue secondIssue = new Issue(2, "Иванов", label2, "Anderson");
+        Issue thirdIssue = new Issue(3, "Петров", label3, "Anderson");
 
         @BeforeEach
-        public void setUp() {
+        public void setUp() throws InterruptedException {
             issueManager.addIssue(firstIssue);
             issueManager.addIssue(secondIssue);
             issueManager.addIssue(thirdIssue);
@@ -110,51 +113,46 @@ class IssueManagerTest {
 
         @Test
         public void shouldFilterByAuthor() {
-            Predicate<Issue> p = issue -> issue.getAuthor().equalsIgnoreCase("Иванов");
             Issue[] expected = new Issue[] {firstIssue, secondIssue};
-            Issue[] actual = new Issue[issueManager.filterBy(p).size()];
+            Issue[] actual = new Issue[issueManager.filterByAuthor("Иванов").size()];
 
-            issueManager.filterBy(p).toArray(actual);
+            issueManager.filterByAuthor("Иванов").toArray(actual);
             assertArrayEquals(expected, actual);
         }
 
         @Test
         public void shouldFilterByLabel() {
-            Predicate<Issue> p = issue -> issue.getLabel().equalsIgnoreCase("Label1");
             Issue[] expected = new Issue[] {firstIssue, thirdIssue};
-            Issue[] actual = new Issue[issueManager.filterBy(p).size()];
+            Issue[] actual = new Issue[issueManager.filterByLabel("Label11").size()];
 
-            issueManager.filterBy(p).toArray(actual);
+            issueManager.filterByLabel("Label11").toArray(actual);
             assertArrayEquals(expected, actual);
         }
 
         @Test
         public void shouldFilterByAssignee() {
-            Predicate<Issue> p = issue -> issue.getAssignee().equalsIgnoreCase("Anderson");
             Issue[] expected = new Issue[] {secondIssue, thirdIssue};
-            Issue[] actual = new Issue[issueManager.filterBy(p).size()];
+            Issue[] actual = new Issue[issueManager.filterByAssignee("Anderson").size()];
 
-            issueManager.filterBy(p).toArray(actual);
+            issueManager.filterByAssignee("Anderson").toArray(actual);
             assertArrayEquals(expected, actual);
         }
 
         @Test
         public void shouldSortIssuesNewestToOldest() {
             Issue[] expected = new Issue[] {thirdIssue, secondIssue, firstIssue};
-            Issue[] actual = new Issue[issueManager.getAll().size()];
+            Issue[] actual = new Issue[ issueManager.sortIssues(true).size()];
 
-            issueManager.sortIssues(true);
-            issueManager.getAll().toArray(actual);
+            issueManager.sortIssues(true).toArray(actual);
             assertArrayEquals(expected, actual);
         }
 
         @Test
         public void shouldSortIssuesOldestToNewest() {
             Issue[] expected = new Issue[] {firstIssue, secondIssue, thirdIssue};
-            Issue[] actual = new Issue[issueManager.getAll().size()];
+            Issue[] actual = new Issue[issueManager.sortIssues(false).size()];
 
-            issueManager.sortIssues(false);
-            issueManager.getAll().toArray(actual);
+            issueManager.sortIssues(false).toArray(actual);
             assertArrayEquals(expected, actual);
         }
     }
